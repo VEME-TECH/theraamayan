@@ -1,0 +1,55 @@
+pragma solidity ^0.6.0;
+
+import "https://github.com/smartcontractkit/chainlink/blob/v6.4.2/evm-contracts/src/v0.6/ChainlinkClient.sol";
+
+// NFT contract that represents a unique product, such as an album or song
+contract ProductNFT {
+  // ID of the product represented by this NFT
+  uint256 productId;
+
+  // Weighting factor used to calculate the distribution power of this NFT
+  uint256 weight;
+
+  // Address of the aggregator service (e.g. TuneCore)
+  address aggregator;
+
+  // ChainLink oracle contract
+  ChainlinkClient public oracle;
+
+  // Event emitted when the weight of the NFT is updated
+  event WeightUpdated(uint256 newWeight);
+
+  // Constructor function
+  constructor(uint256 _productId, address _aggregator, address _oracle) public {
+    productId = _productId;
+    aggregator = _aggregator;
+    oracle = ChainlinkClient(_oracle);
+  }
+
+  // Function to update the weight of the NFT based on the performance of the product
+  function updateWeight() public {
+    // Call the oracle to request the latest performance data for the product
+    oracle.requestData(
+      aggregator,
+      msg.sender,
+      productId,
+      jobId
+    );
+  }
+
+  // Callback function to process the data returned by the oracle
+  function onOracleReturn(bytes32 _requestId, uint256 _weight) public {
+    // Update the weight of the NFT
+    weight = _weight;
+    emit WeightUpdated(_weight);
+  }
+
+  // Function to use the NFT to make a purchase or access certain content
+  function use(uint256 _value) public {
+    // Calculate the distribution of rewards based on the weight of the NFT
+    uint256 distribution = _value * weight;
+
+    // Distribute the rewards to the NFT holder
+    msg.sender.transfer(distribution);
+  }
+}
